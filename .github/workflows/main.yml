@@ -1,0 +1,61 @@
+name: Deploy CV
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    tags:
+      - v*
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9.4'
+      - name: Upgrade pip
+        run: |
+          python3 -m pip install --upgrade pip
+      - name: Get pip cache dir
+        id: pip-cache
+        run: echo "::set-output name=dir::$(pip cache dir)"
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: Install dependencies
+        run: python3 -m pip install -r requirements.txt
+      - name: Working directory check
+        run: |
+          pwd
+          ls
+      - name: Collate Bibliography
+        run: |
+          pushd bibs >& /dev/null
+          bash gather.sh
+          popd >& /dev/null
+          cat bibliography/*.bib > ranulfo-cv.bib
+          python3 ./tools/scholarly-metrics.py --name "Ranulfo Bezerra"
+          python3 ./tools/github-commits.py --username ranulfobezerra --first-year 2015 --last-year 2022  --modern-cv
+      - name: Build LaTeX Document
+        uses: xu-cheng/latex-action@v2
+        with:
+          root_file: ranulfo-cv.tex
+      - name: Check for Resulting PDF and Collated Bibliography
+        run: |
+          ls ranulfo-cv.{pdf,bib}
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            ranulfo-cv.bib
+            ranulfo-cv.pdf
