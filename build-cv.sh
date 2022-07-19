@@ -20,7 +20,7 @@ sleep 5
 
 echo "Obtaining Google Scholar Data"
 python3 tools/scholarly-metrics.py --name "Ranulfo Bezerra"
-python3 tools/github-commits.py  --first-year 2017 --last-year 2022 --username ranulfobezerra --modern-cv
+#python3 tools/github-commits.py  --first-year 2017 --last-year 2022 --username ranulfobezerra --modern-cv
 sleep 5
 
 latexmk -output-directory="./build" -C -pdf ${MAIN}.tex
